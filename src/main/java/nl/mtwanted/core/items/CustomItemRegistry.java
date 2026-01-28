@@ -30,10 +30,21 @@ public class CustomItemRegistry {
             ItemMeta meta = item.getItemMeta();
             if (meta == null) continue;
 
-            // ✅ SAFE CustomModelData handling (FIX)
+            // ✅ SAFE CustomModelData handling (your requested logic, fixed)
             Object cmdObj = itemSec.get("custom_model_data");
+            int cmd = 0;
+
             if (cmdObj instanceof Number) {
-                meta.setCustomModelData(((Number) cmdObj).intValue());
+                cmd = ((Number) cmdObj).intValue();
+            } else if (cmdObj instanceof String) {
+                try {
+                    cmd = Integer.parseInt((String) cmdObj);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+
+            if (cmd > 0) {
+                meta.setCustomModelData(cmd);
             }
 
             if (itemSec.contains("name")) {
