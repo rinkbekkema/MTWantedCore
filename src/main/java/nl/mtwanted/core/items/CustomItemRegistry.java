@@ -33,7 +33,13 @@ public final class CustomItemRegistry {
             String id = Objects.toString(entry.get("id"), "").toLowerCase();
             String namespace = Objects.toString(entry.get("namespace"), "");
             String base = Objects.toString(entry.get("base"), "");
-            int cmd = (int) entry.getOrDefault("custom_model_data", 0);
+            Object cmdObj = entry.get("custom_model_data");
+int cmd = 0;
+
+if (cmdObj instanceof Number) {
+    cmd = ((Number) cmdObj).intValue();
+}
+
             String model = Objects.toString(entry.get("model"), "");
 
             if (id.isBlank() || base.isBlank() || cmd <= 0) continue;
