@@ -1,0 +1,23 @@
+resource-pack:
+  enabled: true
+  # Host this ZIP somewhere HTTPS-accessible (direct file download).
+  url: "https://example.com/mtwantedpack_1.21.10_fixed.zip"
+  # SHA-1 of the ZIP file, hex string
+  sha1: "5d56b011b7352f9db68001585125c85761451dbd"
+  required: true
+  prompt: "<gold><bold>MTWanted</bold></gold> <yellow>needs the resource pack to show custom items.</yellow>"
+
+custom-items:
+  # If true, /mtw give will also tag the item with a persistent id (safer than name/lore)
+  tag-items: true
+
+furniture:
+  enabled: true
+  # Only items listed here can be placed as "furniture" (ItemDisplay entities).
+  placeable-ids:
+    - "atm_machine"
+    - "trash_can"
+    - "mail_box"
+    - "bus_station"
+  # How far a player can reach to remove furniture while sneaking + left click
+  break-range: 5.0

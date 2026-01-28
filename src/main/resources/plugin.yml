@@ -1,0 +1,11 @@
+name: MTWantedCore
+main: nl.mtwanted.core.MTWantedCore
+version: 0.1.0
+api-version: "1.21"
+commands:
+  mtw:
+    description: MTWanted core command
+    usage: /mtw
+permissions:
+  mtw.admin:
+    default: op
