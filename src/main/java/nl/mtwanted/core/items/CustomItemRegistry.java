@@ -1,101 +1,60 @@
 package nl.mtwanted.core.items;
 
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-public final class CustomItemRegistry {
+public class CustomItemRegistry {
 
-    private final JavaPlugin plugin;
-    private final NamespacedKey itemIdKey;
-    private final Map<String, CustomItem> itemsById = new LinkedHashMap<>();
+    private final Map<String, ItemStack> items = new HashMap<>();
 
-    public CustomItemRegistry(JavaPlugin plugin) {
-        this.plugin = plugin;
-        this.itemIdKey = new NamespacedKey(plugin, "custom_item_id");
-    }
+    public void load(ConfigurationSection section) {
+        items.clear();
+        if (section == null) return;
 
-    public void reload() {
-        itemsById.clear();
+        for (String id : section.getKeys(false)) {
+            ConfigurationSection itemSec = section.getConfigurationSection(id);
+            if (itemSec == null) continue;
 
-        File file = new File(plugin.getDataFolder(), "items.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            String materialName = itemSec.getString("material");
+            if (materialName == null) continue;
 
-        var list = yml.getMapList("items");
-        for (var entry : list) {
-            String id = Objects.toString(entry.get("id"), "").toLowerCase();
-            String namespace = Objects.toString(entry.get("namespace"), "");
-            String base = Objects.toString(entry.get("base"), "");
-            Object cmdObj = entry.get("custom_model_data");
-int cmd = 0;
+            Material material = Material.matchMaterial(materialName);
+            if (material == null) continue;
 
-if (cmdObj instanceof Number) {
-    cmd = ((Number) cmdObj).intValue();
-}
+            ItemStack item = new ItemStack(material);
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) continue;
 
-            String model = Objects.toString(entry.get("model"), "");
-
-            if (id.isBlank() || base.isBlank() || cmd <= 0) continue;
-
-            Material mat;
-            try {
-                mat = Material.valueOf(base.toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException ex) {
-                plugin.getLogger().warning("Unknown material in items.yml: " + base + " (id=" + id + ")");
-                continue;
+            // ✅ SAFE CustomModelData handling (FIX)
+            Object cmdObj = itemSec.get("custom_model_data");
+            if (cmdObj instanceof Number) {
+                meta.setCustomModelData(((Number) cmdObj).intValue());
             }
 
-            itemsById.put(id, new CustomItem(id, namespace, mat, cmd, model));
+            if (itemSec.contains("name")) {
+                meta.setDisplayName(itemSec.getString("name"));
+            }
+
+            if (itemSec.contains("lore")) {
+                meta.setLore(itemSec.getStringList("lore"));
+            }
+
+            item.setItemMeta(meta);
+            items.put(id.toLowerCase(), item);
         }
     }
 
-    public int size() {
-        return itemsById.size();
+    public ItemStack get(String id) {
+        ItemStack item = items.get(id.toLowerCase());
+        return item == null ? null : item.clone();
     }
 
-    public Collection<CustomItem> all() {
-        return Collections.unmodifiableCollection(itemsById.values());
-    }
-
-    public Optional<CustomItem> get(String id) {
-        return Optional.ofNullable(itemsById.get(id.toLowerCase(Locale.ROOT)));
-    }
-
-    public ItemStack createItemStack(CustomItem item, int amount) {
-        ItemStack stack = new ItemStack(item.baseMaterial(), amount);
-        ItemMeta meta = stack.getItemMeta();
-
-        // Custom model
-        meta.setCustomModelData(item.customModelData());
-
-        // Optional safe tag
-        boolean tagItems = plugin.getConfig().getBoolean("custom-items.tag-items", true);
-        if (tagItems) {
-            meta.getPersistentDataContainer().set(itemIdKey, PersistentDataType.STRING, item.id());
-        }
-
-        // Simple display name (can be replaced with MiniMessage/Adventure)
-        meta.setDisplayName("§e" + item.id().replace('_', ' '));
-
-        stack.setItemMeta(meta);
-        return stack;
-    }
-
-    public Optional<String> readTaggedId(ItemStack stack) {
-        if (stack == null || !stack.hasItemMeta()) return Optional.empty();
-        ItemMeta meta = stack.getItemMeta();
-        String id = meta.getPersistentDataContainer().get(itemIdKey, PersistentDataType.STRING);
-        return Optional.ofNullable(id);
-    }
-
-    public NamespacedKey itemIdKey() {
-        return itemIdKey;
+    public boolean exists(String id) {
+        return items.containsKey(id.toLowerCase());
     }
 }
